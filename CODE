@@ -1,0 +1,78 @@
+#include <lpc17xx.h>
+#include <stdio.h> 
+//#define PIN0_1 (1)
+//#define PIN0_2 (1<<1)
+void delay(int);
+void writecmd(unsigned char ch);
+void writedata(unsigned char ch);
+void initLCD(void);
+int main()
+{
+char str[]="LEAKAGE DETECTED";
+int cnt=0;
+LPC_PINCON->PINSEL0=0x000000;
+ LPC_PINCON->PINSEL3=0x000000;
+LPC_PINCON->PINSEL4=0x000000;
+LPC_PINCON->PINSEL7=0x000000;
+LPC_GPIO0->FIODIR=0xffffffff;
+LPC_GPIO1->FIODIR=0xffffffff;
+LPC_GPIO2->FIODIR=0x00000000;
+LPC_GPIO3->FIODIR=0xffffffff;
+initLCD();
+while(1)
+{ 
+if((LPC_GPIO2->FIOPIN & 0X01) == 1)
+{
+LPC_GPIO3->FIOPIN=0X00000001<<26;
+writecmd(0x01);
+} 
+else
+{
+LPC_GPIO3->FIOPIN=0X00000001<<25;
+writecmd(0x80);
+delay(100);
+cnt=0;
+while(str[cnt]!='\0')
+{
+writedata(str[cnt]);
+delay(100);
+cnt++;
+}
+}
+}
+}
+void initLCD(void)
+{
+int cnt=0;
+char command[]={0x38,0x0e,0x01,0x06,0x80,'\0'};
+while(command[cnt]!='\0')
+{
+writecmd(command[cnt]);
+delay(100);
+cnt++;
+}
+}
+void writecmd(unsigned char ch)
+{
+LPC_GPIO0->FIOPIN=0x00;//|=0X00000006;
+LPC_GPIO1->FIOPIN=((0X00000000|ch)<<16);
+LPC_GPIO0->FIOSET|=0X00000008;
+delay(100);
+LPC_GPIO0->FIOCLR|=0X00000008;
+delay(100);
+}
+void writedata(unsigned char ch)
+{
+LPC_GPIO0->FIOPIN=0X00000002;
+LPC_GPIO1->FIOPIN=((0X00000000|ch)<<16);
+LPC_GPIO0->FIOSET|=0X00000008;
+delay(100);
+LPC_GPIO0->FIOCLR|=0X00000008;
+delay(100);
+}
+void delay(int y)
+{
+int i,j;
+for(i=0;i<=1000;i++)
+for(j=0;j<y;j++);
+}
